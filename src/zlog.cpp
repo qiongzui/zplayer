@@ -20,7 +20,7 @@ static char av_error[AV_ERROR_MAX_STRING_SIZE] = { 0 };
 
 #ifdef _WIN32
 #include <windows.h>
-auto logger = spdlog::basic_logger_mt("zplayer_logger", R"(log\zplayer_log.txt)");
+auto logger = spdlog::basic_logger_mt("zplayer", R"(log\zplayer_log.txt)", true);
 #endif
 
 void ZPlayer::logd(const char* fmt, ...) {
@@ -74,3 +74,9 @@ void ZPlayer::loge(const char* fmt, ...) {
 char* ZPlayer::ff_error(int errnum) {
     return z_err2str(errnum);
 }
+
+#ifdef _WIN32
+const char* ZPlayer::win_error(DWORD errnum) {
+    return std::to_string(long long (errnum)).c_str();
+}
+#endif // _WIN32

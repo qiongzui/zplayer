@@ -28,51 +28,73 @@ using namespace DirectX;
 
 #include "d3dx12.h"
 
+#include "vdev.h"
+
 #define GRS_WND_TITLE _T("ZPlayer")
 #define GRS_WND_CLASS_NAME _T("ZPlayer")
 
-struct GRS_VERTEX {
-    XMFLOAT3 position;
-    XMFLOAT4 color;
-};
+namespace ZPlayer {
+    struct Vertex {
+        XMFLOAT3 position;
+        XMFLOAT2 uv;
+    };
 
-class Vdec_win {
-    private:
-        const static UINT _frameBackBufCount = 3u;
-        int _width = 0;
-        int _height = 0;
-        UINT _frameIndex = 0;
-        UINT _frameCnt = 0;
+    class Vdev_win : public Vdev {
+        public:
+            void setSurface(void* surface) override;
+            int init() override;
+            int release() override;
+            int render(uint8_t* data, int len) override;
+        private:
+            int initPipeline();
+            int initResource();
+            std::vector<UINT8> generateTextureData();
+            int waitForPreviousFrame();
+            int populateCommandList(uint8_t* frame, int size);
+        private:
+            const static UINT _frameBackBufCount = 3u;
+            int _textureWidth = 0;
+            int _textureHeight = 0;
+            int _textureChannel = 0;
 
-        UINT _dxgiFactoryFlags = 0U;
-        UINT _RTVDescriptorSize = 0U;
+            UINT _frameIndex = 0;
+            UINT _frameCnt = 0;
 
-        HWND _hwnd = nullptr;
-        MSG _msg = { 0 };
+            
+            UINT _rtvDescriptorSize = 0U;
 
-        float _aspectRatio = 3.0f;
+            HWND _hwnd = nullptr;
+            MSG _msg = { 0 };
 
-        D3D12_VERTEX_BUFFER_VIEW _stVertexBufferView = {};
+            float _aspectRatio = 3.0f;
 
-        UINT64 _fenceValue = 0ui64;
-        HANDLE _fenceEvent = nullptr;
+            D3D12_VERTEX_BUFFER_VIEW _vertexBufferView = {};
 
-        CD3DX12_VIEWPORT _viewport = {};
-        CD3DX12_RECT _scissorRect = {};
+            UINT64 _fenceValue = 0ui64;
+            HANDLE _fenceEvent = nullptr;
 
-        ComPtr<IDXGIFactory6> _dxgiFactory = nullptr;
-        ComPtr<IDXGIAdapter4> _dxgiAdapter = nullptr;
-        ComPtr<IDXGISwapChain4> _dxgiSwapChain = nullptr;
-        ComPtr<ID3D12Device4> _d3dDevice = nullptr;
-        ComPtr<ID3D12CommandQueue> _d3dCommandQueue = nullptr;
-        ComPtr<ID3D12CommandAllocator> _d3dCommandAllocator = nullptr;
-        ComPtr<ID3D12GraphicsCommandList> _d3dCommandList = nullptr;
-        ComPtr<ID3D12DescriptorHeap> _d3dRtvHeap = nullptr;
-        ComPtr<ID3D12Resource2> _d3dRenderTargets[_frameBackBufCount] = {};
-        ComPtr<ID3D12RootSignature> _d3dRootSignature = nullptr;
-        ComPtr<ID3D12PipelineState> _d3dPipelineState = nullptr;
-        ComPtr<ID3D12Resource> _d3dVertexBuffer = nullptr;
-        ComPtr<ID3D12Fence1> _d3dFence = nullptr;
+            CD3DX12_VIEWPORT _viewport = {};
+            CD3DX12_RECT _scissorRect = {};
 
-};
+            
+            ComPtr<IDXGIAdapter1> _dxgiAdapter = nullptr;
+            ComPtr<IDXGISwapChain3> _swapChain = nullptr;
+            ComPtr<ID3D12Device4> _device = nullptr;
+            ComPtr<ID3D12CommandQueue> _commandQueue = nullptr;
+            ComPtr<ID3D12CommandAllocator> _commandAllocator = nullptr;
+            ComPtr<ID3D12GraphicsCommandList> _commandList = nullptr;
+            ComPtr<ID3D12DescriptorHeap> _rtvHeap = nullptr;
+            ComPtr<ID3D12DescriptorHeap> _srvHeap = nullptr;
+            ComPtr<ID3D12Resource2> _renderTargets[_frameBackBufCount] = {};
+            ComPtr<ID3D12RootSignature> _rootSignature = nullptr;
+            ComPtr<ID3D12PipelineState> _pipelineState = nullptr;
+            ComPtr<ID3D12Resource> _vertexBuffer = nullptr;
+            ComPtr<ID3D12Fence1> _fence = nullptr;
+            ComPtr<ID3D12Resource> _texcute = nullptr;
+            ComPtr<ID3D12Resource> _textureUpload = nullptr;
+
+            // render params
+
+    };
+}
 #endif

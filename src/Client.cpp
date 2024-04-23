@@ -40,8 +40,12 @@ void Client::prepare() {
 	// init render
 	// _arender = std::make_shared<ZRender>();
 	// _arender->init(nullptr);
-	// _vrender = std::make_shared<ZRender>();
-	// _vrender->init(nullptr);
+	_vrender = std::make_shared<ZRender>();
+	auto ret = _vrender->init(_surface);
+	if (ret != 0) {
+		loge("init render failed");
+		return;
+	}
 
 	_packet_queue.init();
 	_aframe = av_frame_alloc();
@@ -173,7 +177,6 @@ void Client::demuxerThread() {
 	}
 	
 	AVPacket* packet = nullptr;
-	std::string dumpPath = R"(D:\code\myProject\ZPlayer\ZPlayer\player_win\dump\)";
 	int keyId = -1;
 	while (true) {
 		if (_state == PlayState::Stopped) {
@@ -200,20 +203,9 @@ void Client::demuxerThread() {
 		}
 		std::lock_guard<std::mutex> lock(_packet_queue_mutex);
 		if (_demuxer->getVideoStream() && packet->stream_index == _demuxer->getVideoStream()->index) {
-			_packet_queue.video_filled_enqueue(packet);
-			
-			logi("packet type: %d", packet->data[4] & 0x1f);
-			if (packet->flags & AV_PKT_FLAG_KEY) {
-				_writer->stop();
-				keyId++;
-				char buffer[256] = { 0 };
-				sprintf_s(buffer, 256, "%s%d.yuv", dumpPath.c_str(), keyId);
-				_writer->start(buffer);
-			}
-
-			_writer->write(packet->data, packet->size);
+			_packet_queue.video_full_enqueue(packet);
 		} else if (_demuxer->getAudioStream() && packet->stream_index == _demuxer->getAudioStream()->index) {
-			_packet_queue.audio_filled_enqueue(packet);
+			_packet_queue.audio_full_enqueue(packet);
 		}
 	}
 	
@@ -234,7 +226,7 @@ void Client::adecoderThread() {
 		}
 		{		
 			// std::lock_guard<std::mutex> lock(_packet_queue_mutex);
-			packet = _packet_queue.audio_filled_dequeue();
+			packet = _packet_queue.audio_full_dequeue();
 		}
 		if (!packet) {
 			continue;
@@ -266,7 +258,7 @@ void Client::vdecoderThread() {
 
 		{
 			// std::lock_guard<std::mutex> lock(_packet_queue_mutex);
-			packet = _packet_queue.video_filled_dequeue();
+			packet = _packet_queue.video_full_dequeue();
 		}
 
 		if (!packet) {
@@ -341,9 +333,6 @@ void Client::vrenderThread() {
 		
 		_vnumofdecoding--;
 		// render
-		logi("vframe pts: %ld, _vframe isKey: %d", _vframe->pts, _vframe->flags & AV_FRAME_FLAG_KEY);
-		av_frame_unref(_vframe);
-
 		if (_lastRenderTimestampMs != 0)  {
 			int64_t currentTimestampMs = get_current_timestamp();
 			int64_t delta = currentTimestampMs - _lastRenderTimestampMs;
@@ -351,7 +340,9 @@ void Client::vrenderThread() {
 				sleep(_renderDelay - delta);
 			}
 		}
-		
+
+		_vrender->render(_vframe);
+		av_frame_unref(_vframe);
 		_lastRenderTimestampMs = get_current_timestamp();
 		break;
 	}
@@ -364,5 +355,10 @@ int Client::getDurationMs() {
 	if (_demuxer) {
 		return _demuxer->getDurationMs();
 	}
+	return 0;
+}
+
+int Client::render() {
+	_vrender->render(_vframe);
 	return 0;
 }

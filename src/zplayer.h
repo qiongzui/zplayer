@@ -11,5 +11,6 @@ void zplayer_close(void** zplayer);
 void zplayer_play(void* zplayer);
 void zplayer_pause(void* zplayer);
 void zplayer_seek(void* zplayer, int timestamp);
+void zplayer_render(void* zplayer, void* frame);
 
 void zplayer_query(void* zplayer, MsgType msgtype, int* ret);

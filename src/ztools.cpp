@@ -2,6 +2,7 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#include <direct.h>
 #else
 #include <sys/time.h>
 #endif
@@ -30,4 +31,10 @@ int64_t ZPlayer::get_current_timestamp() {
     gettimeofday(&tv, NULL);
     return tv.tv_sec * 1000 + tv.tv_usec / 1000;
 #endif
+}
+
+std::string ZPlayer::get_current_path() {
+    char buffer[MAX_PATH];
+    _getcwd(buffer, MAX_PATH);
+    return std::string(buffer);
 }

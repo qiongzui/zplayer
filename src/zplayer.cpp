@@ -5,7 +5,9 @@ using namespace ZPlayer;
 
 
 void* zplayer_create(void* surface) {
-	return reinterpret_cast<void*>(new Client());
+	auto client = new Client();
+	client->setSurface(surface);
+	return client;
 }
 
 void zplayer_open(void* zplayer, const char* url) {
@@ -68,4 +70,12 @@ void zplayer_query(void* zplayer, MsgType msgtype, int* ret) {
 	default:
 		break;
 	}
+}
+
+void zplayer_render(void* zplayer, void* frame) {
+	auto client = reinterpret_cast<Client*>(zplayer);
+	if (!client) {
+		return;
+	}
+	client->render();
 }

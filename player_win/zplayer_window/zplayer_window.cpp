@@ -158,10 +158,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_PAINT:
         {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
+            //PAINTSTRUCT ps;
+            //HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: 在此处添加使用 hdc 的任何绘图代码...
-            EndPaint(hWnd, &ps);
+            //EndPaint(hWnd, &ps);
         }
         break;
     case WM_DESTROY:
@@ -197,7 +197,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 void DecodeThread() {
     std::cout << "Hello World!\n";
     std::string filePath = R"(C:\Users\51917\Downloads\20240418-153114.mp4)";
-    std::string filePath1 = R"(C:\Users\51917\Desktop\test\2.mp4)";
+    std::string filePath1 = R"(C:\Users\51917\Desktop\test\test.mp4)";
     auto zplayer = zplayer_create(g_hwnd);
     zplayer_open(zplayer, filePath1.c_str());
     zplayer_play(zplayer);

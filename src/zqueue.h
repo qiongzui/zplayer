@@ -2,8 +2,11 @@
 
 #include <iostream>
 #include <queue>
+#include <atomic>
+#include <mutex>
 extern "C" {
 #include "libavcodec/avcodec.h"
+#include "libavutil/imgutils.h"
 }
 
 namespace ZPlayer {
@@ -16,11 +19,11 @@ namespace ZPlayer {
         AVPacket* empty_dequeue();
         void empty_enqueue(AVPacket* packet);
 
-        void video_filled_enqueue(AVPacket* packet);
-        AVPacket* video_filled_dequeue();
+        void video_full_enqueue(AVPacket* packet);
+        AVPacket* video_full_dequeue();
 
-        void audio_filled_enqueue(AVPacket* packet);
-        AVPacket* audio_filled_dequeue();
+        void audio_full_enqueue(AVPacket* packet);
+        AVPacket* audio_full_dequeue();
 
     private:
         std::queue<AVPacket*> _empty_queue;
@@ -30,19 +33,25 @@ namespace ZPlayer {
 
     class Frame_Queue {
     public:
-        void init(int size = 5);
+        Frame_Queue(int frame_cnt = 5);
         void flush();
         void release();
 
         AVFrame* empty_dequeue();
         void empty_enqueue(AVFrame* frame);
+        int get_empty_queue_size() const { return _empty_queue_size; };
 
-        void filled_enqueue(AVFrame* frame);
-        AVFrame* filled_dequeue();
+        void full_enqueue(AVFrame* frame);
+        AVFrame* full_dequeue();
+        int get_full_queue_size() const { return _full_queue_size; };
 
     private:
+        std::mutex _mutex;
+        int _size = 0;
         std::queue<AVFrame*> _empty_queue;
-        std::queue<AVFrame*> _filled_queue;
+        std::atomic<int> _empty_queue_size = 0;
+        std::queue<AVFrame*> _full_queue;
+        std::atomic<int> _full_queue_size = 0;
     };
 }
 

@@ -144,6 +144,8 @@
     <ClInclude Include="..\..\src\demuxer.h" />
     <ClInclude Include="..\..\src\ff_decoder.h" />
     <ClInclude Include="..\..\src\render.h" />
+    <ClInclude Include="..\..\src\vdev.h" />
+    <ClInclude Include="..\..\src\vdev_factory.h" />
     <ClInclude Include="..\..\src\vdev_win.h" />
     <ClInclude Include="..\..\src\write_file.h" />
     <ClInclude Include="..\..\src\zlog.h" />
@@ -159,6 +161,8 @@
     <ClCompile Include="..\..\src\Client.cpp" />
     <ClCompile Include="..\..\src\demuxer.cpp" />
     <ClCompile Include="..\..\src\ff_decoder.cpp" />
+    <ClCompile Include="..\..\src\render.cpp" />
+    <ClCompile Include="..\..\src\vdev.cpp" />
     <ClCompile Include="..\..\src\vdev_win.cpp" />
     <ClCompile Include="..\..\src\write_file.cpp" />
     <ClCompile Include="..\..\src\zlog.cpp" />

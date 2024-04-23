@@ -33,6 +33,7 @@ namespace ZPlayer {
 		int pause();
 		int seek(int timestamp);
 		int stop();
+		int render();
 
 		int getDurationMs();
 		int getCurrentTimestampMs() { return _currentTimestampMs; }
