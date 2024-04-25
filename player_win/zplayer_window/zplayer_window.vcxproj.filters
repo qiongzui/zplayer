@@ -66,6 +66,15 @@
     <ClInclude Include="..\..\src\vdev_factory.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\adev.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\adev_win.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arender.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="zplayer_window.cpp">
@@ -98,10 +107,19 @@
     <ClCompile Include="..\..\src\ztools.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\render.cpp">
+    <ClCompile Include="..\..\src\vdev.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\vdev.cpp">
+    <ClCompile Include="..\..\src\arender.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\adev.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\vrender.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\adev_win.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

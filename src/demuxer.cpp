@@ -33,8 +33,11 @@ void ZDemuxer::init() {
     _packet = av_packet_alloc();
 
     _durationMs = _formatContext->duration / AV_TIME_BASE * 1000;
-    auto fps = av_guess_frame_rate(_formatContext, _formatContext->streams[_videoStreamIndex], nullptr);
-    _frameRate = fps.num / fps.den;
+    if (_videoStreamIndex >= 0) {
+        auto fps = av_guess_frame_rate(_formatContext, _formatContext->streams[_videoStreamIndex], nullptr);
+        _frameRate = fps.num / fps.den;
+        logi("video fps: %d", _frameRate);
+    }
 }
 
 void ZDemuxer::release() {

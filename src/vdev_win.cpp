@@ -94,7 +94,6 @@ int Vdev_win::initPipeline() {
     for (UINT adapterIndex = 0; DXGI_ERROR_NOT_FOUND != factory->EnumAdapters1(adapterIndex, &_dxgiAdapter); ++adapterIndex) {
         DXGI_ADAPTER_DESC1 desc = {};
         _dxgiAdapter->GetDesc1(&desc);
-        logi("adapter[%d]: %s", adapterIndex, desc.Description);
         if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
             continue;
         }
@@ -400,7 +399,7 @@ int Vdev_win::initResource() {
             loge("UpdateSubresources failed, error: %s", win_error(GetLastError()));
             return -1;
         }
-        logi("UpdateSubresources size: %d", size);
+
 		auto urceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(_texcute.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         _commandList->ResourceBarrier(1, &urceBarrier);
     

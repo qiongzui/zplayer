@@ -2,8 +2,10 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <locale>
+#include <codecvt>
 #include "spdlog/spdlog.h"
-#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/basic_file_sink.h"0
 
 extern "C" {
 #include "libavutil/error.h"
@@ -76,7 +78,25 @@ char* ZPlayer::ff_error(int errnum) {
 }
 
 #ifdef _WIN32
+
+inline std::string unicode2utf8(const std::wstring& in)	// = unicode => utf-8
+{
+    std::string ret;
+    try {
+        std::wstring_convert< std::codecvt_utf8<wchar_t> > wcv;
+        ret = wcv.to_bytes(in);
+    }
+    catch (const std::exception&) {
+        ;
+    }
+    return ret;
+}
+
 const char* ZPlayer::win_error(DWORD errnum) {
-    return std::to_string(long long (errnum)).c_str();
+    char messageBuffer[256];
+    size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL, errnum, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)messageBuffer, 0, NULL);
+ 
+    return messageBuffer;
 }
 #endif // _WIN32

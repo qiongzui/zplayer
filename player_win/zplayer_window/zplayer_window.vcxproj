@@ -139,6 +139,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\adev.h" />
+    <ClInclude Include="..\..\src\adev_win.h" />
+    <ClInclude Include="..\..\src\arender.h" />
     <ClInclude Include="..\..\src\Client.h" />
     <ClInclude Include="..\..\src\d3dx12.h" />
     <ClInclude Include="..\..\src\demuxer.h" />
@@ -158,12 +161,15 @@
     <ClInclude Include="zplayer_window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\adev.cpp" />
+    <ClCompile Include="..\..\src\adev_win.cpp" />
+    <ClCompile Include="..\..\src\arender.cpp" />
     <ClCompile Include="..\..\src\Client.cpp" />
     <ClCompile Include="..\..\src\demuxer.cpp" />
     <ClCompile Include="..\..\src\ff_decoder.cpp" />
-    <ClCompile Include="..\..\src\render.cpp" />
     <ClCompile Include="..\..\src\vdev.cpp" />
     <ClCompile Include="..\..\src\vdev_win.cpp" />
+    <ClCompile Include="..\..\src\vrender.cpp" />
     <ClCompile Include="..\..\src\write_file.cpp" />
     <ClCompile Include="..\..\src\zlog.cpp" />
     <ClCompile Include="..\..\src\zplayer.cpp" />

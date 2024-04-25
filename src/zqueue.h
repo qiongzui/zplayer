@@ -25,10 +25,20 @@ namespace ZPlayer {
         void audio_full_enqueue(AVPacket* packet);
         AVPacket* audio_full_dequeue();
 
+        int get_empty_queue_size() const { return _empty_queue.size(); };
+        int get_video_full_queue_size() const { return _video_queue.size(); };
+        int get_audio_full_queue_size() const { return _audio_queue.size(); };
+
     private:
         std::queue<AVPacket*> _empty_queue;
         std::queue<AVPacket*> _video_queue;
         std::queue<AVPacket*> _audio_queue;
+
+        std::mutex _empty_mutex;
+        std::mutex _video_mutex;
+        std::mutex _audio_mutex;
+
+        std::atomic_bool _isInit = false;
     };
 
     class Frame_Queue {
@@ -39,19 +49,17 @@ namespace ZPlayer {
 
         AVFrame* empty_dequeue();
         void empty_enqueue(AVFrame* frame);
-        int get_empty_queue_size() const { return _empty_queue_size; };
+        int get_empty_queue_size() const { return _empty_queue.size(); };
 
         void full_enqueue(AVFrame* frame);
         AVFrame* full_dequeue();
-        int get_full_queue_size() const { return _full_queue_size; };
+        int get_full_queue_size() const { return _full_queue.size(); };
 
     private:
         std::mutex _mutex;
         int _size = 0;
         std::queue<AVFrame*> _empty_queue;
-        std::atomic<int> _empty_queue_size = 0;
         std::queue<AVFrame*> _full_queue;
-        std::atomic<int> _full_queue_size = 0;
     };
 }
 

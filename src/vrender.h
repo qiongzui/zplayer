@@ -1,17 +1,19 @@
 #pragma once
 
 #include <iostream>
-#include "vdev_win.h"
+#include "vdev.h"
 
 extern "C" {
     #include "libswscale/swscale.h"
 }
 
 namespace ZPlayer {
-    class ZRender{
+    class VRender{
     public:
-        int init(void* surface);
-        int release();
+        VRender() = delete;
+        VRender(void* surface);
+        ~VRender();
+        int init();
         void render(AVFrame* frame);
         void screenShot(std::string file);
         void seek(int timestamp) { _seekTimestampMs = timestamp; }
@@ -19,5 +21,6 @@ namespace ZPlayer {
         std::shared_ptr<Vdev> _dev = nullptr;
         int _seekTimestampMs = -1;
         bool _isInit = false;
+        void* _surface = nullptr;
     };
 }
