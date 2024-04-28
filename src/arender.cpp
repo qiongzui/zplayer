@@ -14,9 +14,8 @@ ARender::ARender(int sample_rate, int channels, int bitDepth)
 
 ARender::~ARender() {
 }
-FILE* fp;
+
 int ARender::init() {
-    fp = fopen(std::string(get_current_path() + "\\dump\\output.pcm").c_str(), "wb+");
     _dev = Dev_Factory::createAdev();
     if (!_dev) {
         loge("create adev failed");
@@ -27,12 +26,18 @@ int ARender::init() {
         loge("init adev failed");
         return -1;
     }
+
+    auto cbrender = std::make_shared<AudioRenderCallback>();
+    cbrender->onRendered = [this](int64_t pts) {
+        if (_avSync) {
+            _avSync->updateMasterClock(pts);
+        }
+    };
+    _dev->setCallback(cbrender);
     return 0;
 }
 
 int ARender::release() {
-    fclose(fp);
-
     if (_swrframe) {
         av_freep(&_swrframe);
         _swrframe = nullptr;
@@ -87,11 +92,12 @@ void ARender::render(AVFrame* frame) {
                 return;
             }
 
-            // fwrite(_swrframe[0], 1, _swrlineSize, fp);
             _dev->render(_swrframe[0], _swrlineSize, frame->pts);
         } else {
             _dev->render(frame->data[0], frame->linesize[0], frame->pts);
         }
+    } else {
+        _dev->render(frame->data[0], frame->linesize[0], frame->pts);
     }
 }
 

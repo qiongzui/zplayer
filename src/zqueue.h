@@ -29,6 +29,9 @@ namespace ZPlayer {
         int get_video_full_queue_size() const { return _video_queue.size(); };
         int get_audio_full_queue_size() const { return _audio_queue.size(); };
 
+        int64_t get_video_current_packet_timestamp();
+        int64_t get_audio_current_packet_timestamp();
+
     private:
         std::queue<AVPacket*> _empty_queue;
         std::queue<AVPacket*> _video_queue;
@@ -54,6 +57,8 @@ namespace ZPlayer {
         void full_enqueue(AVFrame* frame);
         AVFrame* full_dequeue();
         int get_full_queue_size() const { return _full_queue.size(); };
+
+        int64_t get_full_current_frame_timestamp();
 
     private:
         std::mutex _mutex;

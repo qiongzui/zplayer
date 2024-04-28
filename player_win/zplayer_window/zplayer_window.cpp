@@ -197,7 +197,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 void DecodeThread() {
     std::cout << "Hello World!\n";
     std::string filePath = R"(C:\Users\51917\Downloads\20240418-153114.mp4)";
-    std::string filePath1 = R"(C:\Users\51917\Desktop\test\2.mp4)";
+    std::string filePath1 = R"(C:\Users\51917\Desktop\test\test.mp4)";
     auto zplayer = zplayer_create(g_hwnd);
     zplayer_open(zplayer, filePath1.c_str());
     zplayer_play(zplayer);

@@ -23,6 +23,9 @@ namespace ZPlayer {
 
 		int getDurationMs() { return _durationMs; };
 		int getFrameRate() { return _frameRate; }
+
+		int getSampleRate() { return _sampleRate; }
+		int getChannels() { return _channels; }
 	private:
 		std::string _url;
 		int _durationMs = -1;
@@ -32,5 +35,8 @@ namespace ZPlayer {
 		int _audioStreamIndex = -1;
 		int _frameRate = 30;
 		int _seekTimestampMs = -1;
+
+		int _sampleRate = -1;
+		int _channels = -1;
 	};
 }

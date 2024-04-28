@@ -58,8 +58,8 @@ int Adev_win::init(int sample_rate, int channels, int bytes_per_sample) {
         return -1;
     }
 
-    logi("createSourceVoice success, params: sample_rate: %d, channels: %d, bits_per_sample: %d, block_align: %d, avg_bytes_per_sec: %d",
-     wfx.nSamplesPerSec, wfx.nChannels, wfx.wBitsPerSample, wfx.nBlockAlign, wfx.nAvgBytesPerSec);
+    // logi("createSourceVoice success, params: sample_rate: %d, channels: %d, bits_per_sample: %d, block_align: %d, avg_bytes_per_sec: %d",
+    //  wfx.nSamplesPerSec, wfx.nChannels, wfx.wBitsPerSample, wfx.nBlockAlign, wfx.nAvgBytesPerSec);
 
     _sourceVoice->Start(0);
 
@@ -119,6 +119,7 @@ int Adev_win::render(uint8_t* data, int len, int64_t pts) {
     buffer.pAudioData = _bufferContexts[index].data;
     buffer.Flags = 0;
 
+    _bufferContexts[index].duration = len * 1000.f / _bytes_per_sample / _channels / _sampleRate;
     _bufferContexts[index].pts = pts;
     buffer.pContext = &_bufferContexts[index];
 
@@ -176,13 +177,23 @@ void Adev_win::setAllMute(bool isMute) {
     }
 }
 
+
+void Adev_win::onFrameRendered(int index) {
+    int64_t pts = _bufferContexts[index].pts;
+    if (_cbrender) {
+        _cbrender->onRendered(pts + _bufferContexts[index].duration);
+    }
+
+    std::lock_guard<std::mutex> lock(_mutex);
+    _available_index_q.push(index);
+}
+
 void XAudio2Callback::OnBufferEnd(void *pBufferContext) {
     SetEvent(_bufferEndEvent);
-
     if (pBufferContext) {
         auto buf_ctx = *reinterpret_cast<BufferContext*>(pBufferContext);
-        reinterpret_cast<Adev_win*>(buf_ctx.handle)->addAvailableIndex(buf_ctx.index);
-        // logi("OnBufferEnd: pts: %lld", buf_ctx.pts);
+        reinterpret_cast<Adev_win*>(buf_ctx.handle)->onFrameRendered(buf_ctx.index);
+        logi("OnBufferEnd: pts: %lld", buf_ctx.pts);
     }
 }
 

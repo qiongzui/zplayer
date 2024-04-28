@@ -44,12 +44,12 @@ namespace ZPlayer {
             void setSurface(void* surface) override;
             int init() override;
             int release() override;
-            int render(uint8_t* data, int len) override;
+            int render(uint8_t* data, int len, int64_t pts) override;
         private:
             int initPipeline();
             int initResource();
             std::vector<UINT8> generateTextureData();
-            int waitForPreviousFrame();
+            int waitForPreviousFrame(int64_t pts);
             int populateCommandList(uint8_t* frame, int size);
         private:
             const static UINT _frameBackBufCount = 3u;

@@ -36,7 +36,7 @@ namespace ZPlayer {
 		int render();
 
 		int getDurationMs();
-		int getCurrentTimestampMs() { return _currentTimestampMs; }
+		int getCurrentTimestampMs() { return _avSync->getMasterClock(); }
 	private:
 		void setState(PlayState state);
 		std::string printState(PlayState state);
@@ -57,29 +57,34 @@ namespace ZPlayer {
 		std::shared_ptr<ARender> _arender = nullptr;
 		std::shared_ptr<VRender> _vrender = nullptr;
 
-		std::atomic_int _anumofdecoded = 0;
-		std::atomic_int _vnumofdecoded = 0;
-
-		Packet_Queue _packet_queue;
+		std::queue<AVPacket*> _audio_q;
+		std::queue<AVPacket*> _video_q;
 		std::mutex _apacket_queue_mutex;
 		std::mutex _vpacket_queue_mutex;
+		std::mutex _read_mutex;
 		std::condition_variable _apacket_cv;
 		std::condition_variable _vpacket_cv;
+		std::condition_variable _read_cv;
 		AVFrame* _aframe = nullptr;
 		AVFrame* _vframe = nullptr;
 
 		int _sampleRate = 0;
 		int _channels = 0;
 
+		int _lastFrameTimestampMs = 0;
+
 		std::thread _demuxer_thread;
 		std::thread _adecoder_thread;
 		std::thread _vdecoder_thread;
-		// std::thread _arender_thread;
-		// std::thread _vrender_thread;
 
 		int _currentTimestampMs = 0;
 		int _lastRenderTimestampMs = 0;
 
 		std::shared_ptr<WriteFile> _writer = nullptr;
+
+		std::shared_ptr<AVSync> _avSync = nullptr;
+
+		int _videoFrameCount = 0;
+		int _audioFrameCount = 0;
 	};
 }

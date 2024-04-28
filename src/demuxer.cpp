@@ -36,7 +36,13 @@ void ZDemuxer::init() {
     if (_videoStreamIndex >= 0) {
         auto fps = av_guess_frame_rate(_formatContext, _formatContext->streams[_videoStreamIndex], nullptr);
         _frameRate = fps.num / fps.den;
-        logi("video fps: %d", _frameRate);
+        logi("video fps: %d, frameNum: %d", _frameRate, _formatContext->streams[_videoStreamIndex]->nb_frames);
+    }
+
+    if (_audioStreamIndex >= 0) {
+        _sampleRate = _formatContext->streams[_audioStreamIndex]->codecpar->sample_rate;
+        _channels = _formatContext->streams[_audioStreamIndex]->codecpar->ch_layout.nb_channels;
+        logi("audio sampleRate: %d, channels: %d", _sampleRate, _channels);
     }
 }
 

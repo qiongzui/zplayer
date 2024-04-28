@@ -29,6 +29,11 @@ int VRender::init() {
     }
     return 0;
 }
+
+void VRender::setSyncHandler(AVSync* avSync) {
+    _dev->setSyncHandler(avSync);
+}
+
 void VRender::render(AVFrame* frame) {
     _dev->asyncRender(frame);
 }

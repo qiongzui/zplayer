@@ -20,6 +20,7 @@ namespace ZPlayer {
         int index;
         uint8_t* data;
         int len;
+        int64_t duration;
         int64_t pts;
     };
     
@@ -52,7 +53,7 @@ namespace ZPlayer {
         void setAllMute(bool isMute) override;
         int render(uint8_t* data, int len, int64_t pts) override;
 
-        void addAvailableIndex(int index) { _available_index_q.push(index); }
+        void onFrameRendered(int index);
     private:
         ComPtr<IXAudio2> _xaudio2 = nullptr;
         IXAudio2MasteringVoice* _masteringVoice = nullptr;

@@ -142,6 +142,7 @@
     <ClInclude Include="..\..\src\adev.h" />
     <ClInclude Include="..\..\src\adev_win.h" />
     <ClInclude Include="..\..\src\arender.h" />
+    <ClInclude Include="..\..\src\av_sync.h" />
     <ClInclude Include="..\..\src\Client.h" />
     <ClInclude Include="..\..\src\d3dx12.h" />
     <ClInclude Include="..\..\src\demuxer.h" />
@@ -164,6 +165,7 @@
     <ClCompile Include="..\..\src\adev.cpp" />
     <ClCompile Include="..\..\src\adev_win.cpp" />
     <ClCompile Include="..\..\src\arender.cpp" />
+    <ClCompile Include="..\..\src\av_sync.cpp" />
     <ClCompile Include="..\..\src\Client.cpp" />
     <ClCompile Include="..\..\src\demuxer.cpp" />
     <ClCompile Include="..\..\src\ff_decoder.cpp" />

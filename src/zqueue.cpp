@@ -1,4 +1,5 @@
 #include "zqueue.h"
+#include "ztools.h"
 
 using namespace ZPlayer;
 
@@ -90,8 +91,12 @@ void Packet_Queue::video_full_enqueue(AVPacket* packet) {
         return;
     }
 
+    if (_video_queue.size() > 100) {
+        sleep(20);
+    }
     std::lock_guard<std::mutex> lock(_video_mutex);
-    _video_queue.push(packet);
+    auto pkt = av_packet_clone(packet);
+    _video_queue.push(pkt);
 }
 
 AVPacket* Packet_Queue::video_full_dequeue() {
@@ -113,8 +118,12 @@ void Packet_Queue::audio_full_enqueue(AVPacket* packet) {
         return;
     }
 
+    if (_audio_queue.size() > 20) {
+        // sleep(20);
+    }
     std::lock_guard<std::mutex> lock(_audio_mutex);
-    _audio_queue.push(packet);
+    auto pkt = av_packet_clone(packet);
+    _audio_queue.push(pkt);
 }
 
 AVPacket* Packet_Queue::audio_full_dequeue() {
@@ -129,6 +138,24 @@ AVPacket* Packet_Queue::audio_full_dequeue() {
         return packet;
     }
     return nullptr;
+}
+
+int64_t Packet_Queue::get_video_current_packet_timestamp() {
+    std::lock_guard<std::mutex> lock(_video_mutex);
+    if (!_video_queue.empty()) {
+        auto packet = _video_queue.front();
+        return packet->dts;
+    }
+    return 0;
+}
+
+int64_t Packet_Queue::get_audio_current_packet_timestamp() {
+    std::lock_guard<std::mutex> lock(_audio_mutex);
+    if (!_audio_queue.empty()) {
+        auto packet = _audio_queue.front();
+        return packet->dts;
+    }
+    return 0;
 }
 
 Frame_Queue::Frame_Queue(int frame_cnt) {
@@ -191,4 +218,13 @@ AVFrame* Frame_Queue::full_dequeue() {
         return frame;
     }
     return nullptr;
+}
+
+int64_t Frame_Queue::get_full_current_frame_timestamp() {
+    std::lock_guard<std::mutex> lock(_mutex);
+    if (!_full_queue.empty()) {
+        auto frame = _full_queue.front();
+        return frame->pts;
+    }
+    return 0;
 }

@@ -54,14 +54,14 @@ int Vdev_win::init() {
     return 0;
 }
 int Vdev_win::release() {
-    waitForPreviousFrame();
+    waitForPreviousFrame(-1);
     CloseHandle(_fenceEvent);
 
     Vdev::release();
     return 0;
 }
 
-int Vdev_win::render(uint8_t* data, int len) {
+int Vdev_win::render(uint8_t* data, int len, int64_t pts) {
     auto hr = populateCommandList(data, len);
     if (hr != S_OK) {
         loge("populateCommandList failed, error: %s", win_error(GetLastError()));
@@ -76,7 +76,7 @@ int Vdev_win::render(uint8_t* data, int len) {
         loge("present failed, error: %s", win_error(GetLastError()));
         return -1;
     }
-    waitForPreviousFrame();
+    waitForPreviousFrame(pts);
     return 0;
 }
 
@@ -438,7 +438,7 @@ int Vdev_win::initResource() {
             return -1;
         }
 
-        waitForPreviousFrame();
+        waitForPreviousFrame(-1);
     }
 
 }
@@ -479,7 +479,7 @@ std::vector<UINT8> Vdev_win::generateTextureData()
     return data;
 }
 
-int Vdev_win::waitForPreviousFrame() {
+int Vdev_win::waitForPreviousFrame(int64_t pts) {
     // WAITING FOR THE FRAME TO COMPLETE BEFORE CONTINUING IS NOT BEST PRACTICE.
     // This is code implemented as such for simplicity. The D3D12HelloFrameBuffering
     // sample illustrates how to use fences for efficient resource usage and to
@@ -504,7 +504,7 @@ int Vdev_win::waitForPreviousFrame() {
 
         WaitForSingleObject(_fenceEvent, INFINITE);
     }
-
+    logi("video frame %d rendered, pts: %lld", _frameIndex, pts);
     _frameIndex = _swapChain->GetCurrentBackBufferIndex();
     return 0;
 }
