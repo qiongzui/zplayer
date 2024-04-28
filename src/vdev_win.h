@@ -51,6 +51,7 @@ namespace ZPlayer {
             std::vector<UINT8> generateTextureData();
             int waitForPreviousFrame(int64_t pts);
             int populateCommandList(uint8_t* frame, int size);
+            void createVertexBuffer(Vertex* pVertex, int size, int vertexBufferIndex);
         private:
             const static UINT _frameBackBufCount = 3u;
             int _textureWidth = 0;
@@ -68,7 +69,7 @@ namespace ZPlayer {
 
             float _aspectRatio = 3.0f;
 
-            D3D12_VERTEX_BUFFER_VIEW _vertexBufferView = {};
+            std::vector<D3D12_VERTEX_BUFFER_VIEW> _vertexBufferViews;
 
             UINT64 _fenceValue = 0ui64;
             HANDLE _fenceEvent = nullptr;
@@ -88,7 +89,8 @@ namespace ZPlayer {
             ComPtr<ID3D12Resource2> _renderTargets[_frameBackBufCount] = {};
             ComPtr<ID3D12RootSignature> _rootSignature = nullptr;
             ComPtr<ID3D12PipelineState> _pipelineState = nullptr;
-            ComPtr<ID3D12Resource> _vertexBuffer = nullptr;
+            // ComPtr<ID3D12Resource> _vertexBuffer = nullptr;
+            std::vector<ComPtr<ID3D12Resource>> _vertexBuffers;
             ComPtr<ID3D12Fence1> _fence = nullptr;
             ComPtr<ID3D12Resource> _texcute = nullptr;
             ComPtr<ID3D12Resource> _textureUpload = nullptr;

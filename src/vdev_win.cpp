@@ -300,43 +300,62 @@ int Vdev_win::initResource() {
     }
 
     // create the vertex buffer
+    int subVertexCount = 0;
+    _vertexBufferViews.resize(subVertexCount + 1);
+    _vertexBuffers.resize(subVertexCount + 1);
     {
+        float vertexWidth = subVertexCount > 0? 0.6f : 1.0f;
         Vertex stTriangleVertices[] = {
             {{-1.f, -1.f, 0.0f}, {0.0f, 1.0f}},
             {{-1.f, 1.f, 0.0f}, {0.0f, 0.0f}},
-            {{1.f,-1.f, 0.0f}, {1.0f, 1.0f}},
-            {{1.f, 1.f, 0.0f}, {1.0f, 0.0f}},
+            {{vertexWidth,-1.f, 0.0f}, {1.0f, 1.0f}},
+            {{vertexWidth, 1.f, 0.0f}, {1.0f, 0.0f}},
         };
 
-        const UINT vertexBufferSize = sizeof(stTriangleVertices);
-		auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-		auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
-        hr = _device->CreateCommittedResource(
-            &heapProperties,
-            D3D12_HEAP_FLAG_NONE,
-            &resourceDesc,
-            D3D12_RESOURCE_STATE_GENERIC_READ,
-            nullptr,
-            IID_PPV_ARGS(&_vertexBuffer)
-        );
-        if (hr != S_OK) {
-            loge("createCommittedResource failed, error: %s", win_error(GetLastError()));
-            return -1;
-        }
+        createVertexBuffer(stTriangleVertices, sizeof(stTriangleVertices), 0);
+        // const UINT vertexBufferSize = sizeof(stTriangleVertices);
+		// auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		// auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
+        // hr = _device->CreateCommittedResource(
+        //     &heapProperties,
+        //     D3D12_HEAP_FLAG_NONE,
+        //     &resourceDesc,
+        //     D3D12_RESOURCE_STATE_GENERIC_READ,
+        //     nullptr,
+        //     IID_PPV_ARGS(&_vertexBuffers[0])
+        // );
+        // if (hr != S_OK) {
+        //     loge("createCommittedResource failed, error: %s", win_error(GetLastError()));
+        //     return -1;
+        // }
 
-        UINT8* vertexDataBegin = nullptr;
-        CD3DX12_RANGE readRange(0, 0);
-        hr = _vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&vertexDataBegin));
-        if (hr != S_OK) {
-            loge("map failed, error: %s", win_error(GetLastError()));
-            return -1;
-        }
-        memcpy(vertexDataBegin, stTriangleVertices, sizeof(stTriangleVertices));
-        _vertexBuffer->Unmap(0, nullptr);
+        // UINT8* vertexDataBegin = nullptr;
+        // CD3DX12_RANGE readRange(0, 0);
+        // hr = _vertexBuffers[0]->Map(0, &readRange, reinterpret_cast<void**>(&vertexDataBegin));
+        // if (hr != S_OK) {
+        //     loge("map failed, error: %s", win_error(GetLastError()));
+        //     return -1;
+        // }
+        // memcpy(vertexDataBegin, stTriangleVertices, sizeof(stTriangleVertices));
+        // _vertexBuffers[0]->Unmap(0, nullptr);
         
-        _vertexBufferView.BufferLocation = _vertexBuffer->GetGPUVirtualAddress();
-        _vertexBufferView.StrideInBytes = sizeof(Vertex);
-        _vertexBufferView.SizeInBytes = vertexBufferSize;
+        _vertexBufferViews[0].BufferLocation = _vertexBuffers[0]->GetGPUVirtualAddress();
+        _vertexBufferViews[0].StrideInBytes = sizeof(Vertex);
+        _vertexBufferViews[0].SizeInBytes = sizeof(stTriangleVertices);
+    }
+
+    float subVertexHeight = subVertexCount * 0.4f / 2;
+    for (int i = 0; i < subVertexCount; i++) {
+        Vertex subTriangleVertices[] = {
+            {{0.6f, subVertexHeight - i * 0.4f - 0.4f, 0.0f}, {0.0f, 1.0f}},
+            {{0.6f, subVertexHeight - i * 0.4f, 0.0f}, {0.0f, 0.0f}},
+            {{1.f, subVertexHeight - i * 0.4f - 0.4f, 0.0f}, {1.0f, 1.0f}},
+            {{1.f, subVertexHeight - i * 0.4f, 0.0f}, {1.0f, 0.0f}},
+        };
+        createVertexBuffer(subTriangleVertices, sizeof(subTriangleVertices), i+1);
+        _vertexBufferViews[i+1].BufferLocation = _vertexBuffers[i+1]->GetGPUVirtualAddress();
+        _vertexBufferViews[i+1].StrideInBytes = sizeof(Vertex);
+        _vertexBufferViews[i+1].SizeInBytes = sizeof(subTriangleVertices);
     }
 
     // create the texture
@@ -562,13 +581,45 @@ int Vdev_win::populateCommandList(uint8_t* frame, int size)
     const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
     _commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     _commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-    _commandList->IASetVertexBuffers(0, 1, &_vertexBufferView);
-    _commandList->DrawInstanced(4, 1, 0, 0);
+    for (int i = 0; i < _vertexBufferViews.size(); i++) {
+        _commandList->IASetVertexBuffers(0, 1, &_vertexBufferViews[i]);
+        _commandList->DrawInstanced(4, 1, 0, 0);
+    }
+    // _commandList->IASetVertexBuffers(0, _vertexBufferViews.size(), _vertexBufferViews.data());
+    // _commandList->DrawInstanced(4, _vertexBufferViews.size(), 0, 0);
 
     // Indicate that the back buffer will now be used to present.
 	barrier = CD3DX12_RESOURCE_BARRIER::Transition(_renderTargets[_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
     _commandList->ResourceBarrier(1, &barrier);
 
     return _commandList->Close();
+}
+
+void Vdev_win::createVertexBuffer(Vertex* pVertex, int size, int vertexBufferIndex) {
+        const UINT vertexBufferSize = size;
+		auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
+        auto hr = _device->CreateCommittedResource(
+            &heapProperties,
+            D3D12_HEAP_FLAG_NONE,
+            &resourceDesc,
+            D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&_vertexBuffers[vertexBufferIndex])
+        );
+        if (hr != S_OK) {
+            loge("createCommittedResource failed, error: %s", win_error(GetLastError()));
+            return;
+        }
+
+        UINT8* vertexDataBegin = nullptr;
+        CD3DX12_RANGE readRange(0, 0);
+        hr = _vertexBuffers[vertexBufferIndex]->Map(0, &readRange, reinterpret_cast<void**>(&vertexDataBegin));
+        if (hr != S_OK) {
+            loge("map failed, error: %s", win_error(GetLastError()));
+            return;
+        }
+        memcpy(vertexDataBegin, pVertex, size);
+        _vertexBuffers[vertexBufferIndex]->Unmap(0, nullptr);
 }
 #endif
