@@ -30,4 +30,20 @@ namespace ZPlayer {
         S16P, // planner
         F32P
     };
+
+    struct Image {
+        uint8_t* data[4];
+        int width;
+        int height;
+        int stride[4];
+        int format;
+    };
+
+    struct Pcm {
+        uint8_t* data;
+        int size;
+        int sample_rate;
+        int channels;
+        int sample_count;
+    };
 }

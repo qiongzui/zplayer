@@ -104,11 +104,14 @@ int Adev_win::render(uint8_t* data, int len, int64_t pts) {
         WaitForSingleObjectEx(_callback._bufferEndEvent, INFINITE, TRUE);
     }
 
-    std::lock_guard<std::mutex> lock(_mutex);
-    auto index = _available_index_q.front();
-    _available_index_q.pop();
+    int index = -1;
+    {    
+        std::lock_guard<std::mutex> lock(_mutex);
+        index = _available_index_q.front();
+        _available_index_q.pop();
+    }
 
-    if (_bufferContexts[index].data == nullptr) {
+    if (index == -1 || _bufferContexts[index].data == nullptr) {
         _bufferContexts[index].data = new uint8_t[len];
     }
 
@@ -193,7 +196,7 @@ void XAudio2Callback::OnBufferEnd(void *pBufferContext) {
     if (pBufferContext) {
         auto buf_ctx = *reinterpret_cast<BufferContext*>(pBufferContext);
         reinterpret_cast<Adev_win*>(buf_ctx.handle)->onFrameRendered(buf_ctx.index);
-        logi("OnBufferEnd: pts: %lld", buf_ctx.pts);
+        //logi("OnBufferEnd: pts: %lld", buf_ctx.pts);
     }
 }
 

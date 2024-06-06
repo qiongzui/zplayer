@@ -3,8 +3,6 @@
 
 using namespace ZPlayer;
 
-
-
 void ZDemuxer::init() {
     if (_url.empty()) {
         return;
@@ -63,7 +61,9 @@ void ZDemuxer::release() {
 
 void ZDemuxer::readPacket(AVPacket* pkt) {
     if (_formatContext) {
-        if (av_read_frame(_formatContext, pkt) < 0) {
+        int ret = av_read_frame(_formatContext, pkt);
+        if (ret < 0) {
+            //loge("av_read_frame failed: %s", ff_error(ret));
             return;
         }
     }
@@ -71,9 +71,21 @@ void ZDemuxer::readPacket(AVPacket* pkt) {
 
 void ZDemuxer::seek(int64_t posMs) {
     if (_formatContext) {
-        int64_t pos = posMs * _formatContext->streams[0]->time_base.num / _formatContext->streams[0]->time_base.den;
+        int64_t pos = posMs * _formatContext->streams[_videoStreamIndex]->time_base.num / _formatContext->streams[0]->time_base.den / 1000;
         _seekTimestampMs = posMs;
-        av_seek_frame(_formatContext, 0, pos, AVSEEK_FLAG_BACKWARD);
+        int ret = av_seek_frame(_formatContext, _videoStreamIndex, pos, AVSEEK_FLAG_BACKWARD);
+        if (ret < 0) {
+            loge("av_seek_frame failed: %s", ff_error(ret));
+            return;
+        }
+
+        pos = posMs * _formatContext->streams[_audioStreamIndex]->time_base.num / _formatContext->streams[0]->time_base.den / 1000;
+        _seekTimestampMs = posMs;
+        ret = av_seek_frame(_formatContext, _audioStreamIndex, pos, AVSEEK_FLAG_BACKWARD);
+        if (ret < 0) {
+            loge("av_seek_frame failed: %s", ff_error(ret));
+            return;
+        }
     }
 }
 

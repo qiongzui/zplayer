@@ -33,6 +33,12 @@ int64_t ZPlayer::get_current_timestamp() {
 #endif
 }
 
+tm* ZPlayer::get_current_wall_time() {
+    time_t t = time(0);
+    tm* now = localtime(&t);
+    return now;
+}
+
 std::string ZPlayer::get_current_path() {
     char buffer[MAX_PATH];
     _getcwd(buffer, MAX_PATH);

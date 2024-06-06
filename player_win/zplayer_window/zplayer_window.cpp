@@ -209,7 +209,8 @@ void DecodeThread() {
         zplayer_query(zplayer, MsgType::MsgType_CurrentTimestampMs, &curMs);
         if (curMs >= duration)
         {
-            break;
+            zplayer_seek(zplayer, 0);
+            // break;
         }
     }
     zplayer_close(&zplayer);

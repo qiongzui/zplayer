@@ -13,12 +13,6 @@ void FFDecoder::init(AVStream* stream) {
     avcodec_parameters_to_context(_codecContext, stream->codecpar);
     avcodec_open2(_codecContext, codec, nullptr);
 
-    _parserContext = av_parser_init(stream->codecpar->codec_id);
-    if (!_parserContext) {
-        loge("av_parser_init failed");
-        return;
-    }
-
     _isInit = _codecContext == nullptr? false : true;
 }
 
@@ -50,7 +44,7 @@ int FFDecoder::decode(AVPacket* pkt, AVFrame* frame) {
     while (true) {
         ret = avcodec_receive_frame(_codecContext, frame);
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-            return -1;
+            break;
         } else if (ret < 0) {
             loge("avcodec_receive_frame failed, error: %s", ff_error(ret));
             return -1;
@@ -76,4 +70,22 @@ int FFDecoder::receive_frame(AVFrame* frame) {
 
     std::lock_guard<std::mutex> lock(_mutex);
     return avcodec_receive_frame(_codecContext, frame);
+}
+
+int FFDecoder::flush() {
+    avcodec_send_packet(_codecContext, nullptr);
+
+    AVFrame* frame = av_frame_alloc();
+    int ret = 0;
+    while (ret >= 0) {
+        ret = avcodec_receive_frame(_codecContext, frame);
+        if (ret < 0) {
+            // loge("adecoderThread: receive_frame failed, ret: %d", ret);
+            break;
+        }
+    }
+
+    avcodec_flush_buffers(_codecContext);
+    av_frame_free(&frame);
+    return ret;
 }

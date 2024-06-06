@@ -71,11 +71,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>D:\code\myProject\ZPlayer\ZPlayer\src;D:\code\myProject\ZPlayer\ZPlayer\deps\include;$(IncludePath)</IncludePath>
+    <IncludePath>D:\code\myProject\ZPlayer\ZPlayer\src;D:\code\myProject\ZPlayer\ZPlayer\deps\include\pocketsphinx;D:\code\myProject\ZPlayer\ZPlayer\deps\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>D:\code\myProject\ZPlayer\ZPlayer\src;D:\code\myProject\ZPlayer\ZPlayer\deps\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\code\myProject\ZPlayer\ZPlayer\deps\lib\ffmpeg\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\code\myProject\ZPlayer\ZPlayer\src;D:\code\myProject\ZPlayer\ZPlayer\deps\include\pocketsphinx;D:\code\myProject\ZPlayer\ZPlayer\deps\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\code\myProject\ZPlayer\ZPlayer\deps\lib\ffmpeg\win\x64;D:\code\myProject\ZPlayer\ZPlayer\deps\lib\PocketSphinx\win\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -104,7 +104,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;pocketsphinx.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -121,7 +121,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level2</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
@@ -134,8 +134,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\..\deps\lib\ffmpeg\win\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;pocketsphinx.lib;avfilter.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\deps\lib\ffmpeg\win\$(PlatformTarget);$(ProjectDir)..\..\deps\lib\libxml\win\$(PlatformTarget)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -147,11 +147,15 @@
     <ClInclude Include="..\..\src\d3dx12.h" />
     <ClInclude Include="..\..\src\demuxer.h" />
     <ClInclude Include="..\..\src\ff_decoder.h" />
+    <ClInclude Include="..\..\src\ff_video_filter.h" />
+    <ClInclude Include="..\..\src\layout.h" />
     <ClInclude Include="..\..\src\render.h" />
+    <ClInclude Include="..\..\src\speech_recognizer.h" />
     <ClInclude Include="..\..\src\vdev.h" />
     <ClInclude Include="..\..\src\vdev_factory.h" />
     <ClInclude Include="..\..\src\vdev_win.h" />
     <ClInclude Include="..\..\src\write_file.h" />
+    <ClInclude Include="..\..\src\xml_parse.h" />
     <ClInclude Include="..\..\src\zlog.h" />
     <ClInclude Include="..\..\src\zplayer.h" />
     <ClInclude Include="..\..\src\zqueue.h" />
@@ -169,10 +173,14 @@
     <ClCompile Include="..\..\src\Client.cpp" />
     <ClCompile Include="..\..\src\demuxer.cpp" />
     <ClCompile Include="..\..\src\ff_decoder.cpp" />
+    <ClCompile Include="..\..\src\ff_video_filter.cpp" />
+    <ClCompile Include="..\..\src\layout.cpp" />
+    <ClCompile Include="..\..\src\speech_recognizer.cpp" />
     <ClCompile Include="..\..\src\vdev.cpp" />
     <ClCompile Include="..\..\src\vdev_win.cpp" />
     <ClCompile Include="..\..\src\vrender.cpp" />
     <ClCompile Include="..\..\src\write_file.cpp" />
+    <ClCompile Include="..\..\src\xml_parse.cpp" />
     <ClCompile Include="..\..\src\zlog.cpp" />
     <ClCompile Include="..\..\src\zplayer.cpp" />
     <ClCompile Include="..\..\src\zqueue.cpp" />

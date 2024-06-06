@@ -13,6 +13,7 @@ namespace ZPlayer {
     public:
         void init(AVStream* stream);
         void release();
+        int flush();
 
         int decode(AVPacket* pkt, AVFrame* frame);
         int send_packet(AVPacket* pkt);

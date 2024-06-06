@@ -24,7 +24,10 @@ namespace ZPlayer {
         virtual int stop();
         virtual int asyncRender(AVFrame* frame);
 
-        void setSyncHandler(AVSync* avSync) { _avSync = avSync; }
+        void setSyncHandler(std::shared_ptr<AVSync> avSync) { _avSync = avSync; }
+
+        int getWidth() { return _width; }
+        int getHeight() { return _height; }
     protected:
         virtual int render(uint8_t* data, int len, int64_t pts) = 0;
         int _width = 0;
@@ -40,6 +43,6 @@ namespace ZPlayer {
         std::shared_ptr<Frame_Queue> _frameQueue = nullptr;
 
         SwsContext* _swsContext = nullptr;
-        AVSync* _avSync = nullptr;
+        std::shared_ptr<AVSync> _avSync = nullptr;
     };
 } // namespace ZPlayer

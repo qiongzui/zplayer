@@ -81,9 +81,10 @@ int Vdev::asyncRender(AVFrame* frame) {
             av_image_alloc(swsFrame->data, swsFrame->linesize, _width, _height, AV_PIX_FMT_RGBA, 1);
         }
         if (swsFrame && swsFrame->data) {
-            memcpy_s(swsFrame->data[0], swsFrame->linesize[0], frame->data[0], frame->linesize[0]);
+            memcpy_s(swsFrame->data[0], swsFrame->linesize[0] * _height, frame->data[0], frame->linesize[0] * _height);
         }
     }
+
     auto start = get_current_timestamp();
     std::unique_lock<std::mutex> lock(_mutex);
     _cv.wait(lock, [&]() {
@@ -98,7 +99,7 @@ int Vdev::asyncRender(AVFrame* frame) {
     _cv.notify_all();
 
     auto end = get_current_timestamp();
-    logi("enqueue time cost: %lld, q_size: %d", end - start, _frameQueue->get_full_queue_size());
+    //logi("enqueue time cost: %lld, q_size: %d", end - start, _frameQueue->get_full_queue_size());
     return 0;
 }
 
@@ -153,7 +154,7 @@ void Vdev::renderThread() {
         }
         _frameQueue->empty_enqueue(pFrame);
         _empty_cv.notify_all();
-        // av_frame_unref(pFrame);
+        //av_frame_unref(pFrame);
     }
     logi("renderThread exit");
 }

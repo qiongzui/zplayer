@@ -16,7 +16,7 @@ namespace ZPlayer {
         void render(AVFrame* frame);
         int init();
         int release();
-        void setSyncHandler(AVSync* avSync) { _avSync = avSync; }
+        void setSyncHandler(std::shared_ptr<AVSync> avSync) { _avSync = avSync; }
         void setMute(int channel, bool isMute);
         void setAllMute(bool isMute);
         void setvolumePercent(float volumePercent);
@@ -33,6 +33,6 @@ namespace ZPlayer {
 
         uint8_t** _swrframe = nullptr;
         int _swrlineSize = 0;
-        AVSync* _avSync = nullptr;
+        std::shared_ptr<AVSync> _avSync = nullptr;
     };
 }

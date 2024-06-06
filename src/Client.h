@@ -10,6 +10,7 @@
 #include "vrender.h"
 #include "arender.h"
 #include "write_file.h"
+#include "speech_recognizer.h"
 
 namespace ZPlayer {
 	enum PlayState
@@ -40,6 +41,7 @@ namespace ZPlayer {
 	private:
 		void setState(PlayState state);
 		std::string printState(PlayState state);
+		int flush();
 
 		void demuxerThread();
 		void adecoderThread();
@@ -49,7 +51,7 @@ namespace ZPlayer {
 	private:
 		std::string _dataSource;
 		void* _surface = nullptr;
-		std::atomic<PlayState> _state;
+		PlayState _state = Idle;
 		int _renderDelay = 16;
 		std::shared_ptr<ZDemuxer> _demuxer = nullptr;
 		std::shared_ptr<FFDecoder> _vdecoder = nullptr;
@@ -77,7 +79,7 @@ namespace ZPlayer {
 		std::thread _adecoder_thread;
 		std::thread _vdecoder_thread;
 
-		int _currentTimestampMs = 0;
+		int _seekTimestampMs = 0;
 		int _lastRenderTimestampMs = 0;
 
 		std::shared_ptr<WriteFile> _writer = nullptr;
@@ -86,5 +88,7 @@ namespace ZPlayer {
 
 		int _videoFrameCount = 0;
 		int _audioFrameCount = 0;
+
+		std::unique_ptr<SpeechRecognizer> _speechRecognizer = nullptr;
 	};
 }

@@ -523,7 +523,7 @@ int Vdev_win::waitForPreviousFrame(int64_t pts) {
 
         WaitForSingleObject(_fenceEvent, INFINITE);
     }
-    logi("video frame %d rendered, pts: %lld", _frameIndex, pts);
+    //logi("video frame %d rendered, pts: %lld", _frameIndex, pts);
     _frameIndex = _swapChain->GetCurrentBackBufferIndex();
     return 0;
 }

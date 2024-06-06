@@ -26,6 +26,7 @@ void zplayer_close(void** zplayer) {
 	}
 
 	client->stop();
+	client->release();
 	delete *zplayer;
 	*zplayer = nullptr;
 }
