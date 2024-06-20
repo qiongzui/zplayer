@@ -44,10 +44,8 @@ namespace ZPlayer {
 		int flush();
 
 		void demuxerThread();
-		void adecoderThread();
-		void vdecoderThread();
-		void arenderThread();
-		void vrenderThread();
+		void onAudioCallBack(AVFrame* frame);
+		void onVideoCallBack(AVFrame* frame);
 	private:
 		std::string _dataSource;
 		void* _surface = nullptr;
@@ -76,8 +74,6 @@ namespace ZPlayer {
 		int _lastFrameTimestampMs = 0;
 
 		std::thread _demuxer_thread;
-		std::thread _adecoder_thread;
-		std::thread _vdecoder_thread;
 
 		int _seekTimestampMs = 0;
 		int _lastRenderTimestampMs = 0;

@@ -1,4 +1,4 @@
-#include "Client.h"
+#include "engine.h"
 #include "zlog.h"
 #include "ztools.h"
 
@@ -38,16 +38,24 @@ void Client::prepare() {
 
 	// init decoder
 	_vdecoder = std::make_shared<FFDecoder>();
-	_vdecoder->init(video_stream);
+	_vdecoder->init(video_stream, true);
+
+	std::shared_ptr<DecoderCb> vCb = std::make_shared<DecoderCb>();
+	vCb->renderCb = std::bind(&Client::onVideoCallBack, this, std::placeholders::_1);
+	_vdecoder->setCallBack(vCb);
+
 	_adecoder = std::make_shared<FFDecoder>();
-	_adecoder->init(audio_stream);
+	_adecoder->init(audio_stream, false);
+	std::shared_ptr<DecoderCb> aCb = std::make_shared<DecoderCb>();
+	aCb->renderCb = std::bind(&Client::onAudioCallBack, this, std::placeholders::_1);
+	_adecoder->setCallBack(aCb);
 
 	// init avsync
 	_avSync = std::make_shared<AVSync>();
 
 	// init speech recognizer
-	_speechRecognizer = std::make_unique<SpeechRecognizer>();
-	_speechRecognizer->start();
+	//_speechRecognizer = std::make_unique<SpeechRecognizer>();
+	//_speechRecognizer->start();
 
 	// init render
 	_vrender = std::make_shared<VRender>(_surface);
@@ -76,8 +84,8 @@ void Client::prepare() {
 
 	// start thread
 	_demuxer_thread = std::thread(&Client::demuxerThread, this);
-	_adecoder_thread = std::thread(&Client::adecoderThread, this);
-	_vdecoder_thread = std::thread(&Client::vdecoderThread, this);
+	// _adecoder_thread = std::thread(&Client::adecoderThread, this);
+	// _vdecoder_thread = std::thread(&Client::vdecoderThread, this);
 
 	setState(PlayState::Prepared);
 }
@@ -91,12 +99,14 @@ void Client::release() {
 		_demuxer_thread.join();
 	}
 
-	if (_adecoder_thread.joinable()) {
-		_adecoder_thread.join();
+	if (_vdecoder) {
+		_vdecoder->release();
+		_vdecoder = nullptr;
 	}
 
-	if (_vdecoder_thread.joinable()) {
-		_vdecoder_thread.join();
+	if (_adecoder) {
+		_adecoder->release();
+		_adecoder = nullptr;
 	}
 
 	if (_demuxer) {
@@ -106,6 +116,12 @@ void Client::release() {
 	if (_speechRecognizer) {
 		_speechRecognizer->stop();
 		_speechRecognizer = nullptr;
+	}
+
+	if (_avSync) {
+		_avSync->stop();
+		_avSync->release();
+		_avSync = nullptr;
 	}
 
 	if (_aframe) {
@@ -136,11 +152,13 @@ void Client::release() {
 }
 
 int Client::play() {
-	_avSync->start();
 	if (_state != PlayState::Prepared) {
 		return -1;
 	}
-	
+
+	_avSync->start();
+	_vdecoder->start();
+	_adecoder->start();
 	setState(PlayState::Playing);
 	return 0;
 }
@@ -214,6 +232,14 @@ int Client::stop() {
 	_read_cv.notify_all();
 	_apacket_cv.notify_all();
 	_vpacket_cv.notify_all();
+	if (_adecoder) {
+		_adecoder->flush();
+		_adecoder->stop();
+	}
+	if (_vdecoder) {
+		_vdecoder->flush();
+		_vdecoder->stop();
+	}
 	if (_avSync) {
 		_avSync->stop();
 	}
@@ -283,6 +309,10 @@ void Client::demuxerThread() {
 				continue;
 			}
 			_demuxer->readPacket(packet);
+			if (packet->size == 0) {
+				sleep(200);
+				continue;
+			}
 		}
 
 		if (_demuxer->getVideoStream() && packet->stream_index == _demuxer->getVideoStream()->index) {
@@ -294,17 +324,17 @@ void Client::demuxerThread() {
 				timestamp = curTime;
 
 			}
-
-			std::lock_guard<std::mutex> lock(_vpacket_queue_mutex);
-			_video_q.emplace(av_packet_clone(packet));
-			_vpacket_cv.notify_all();
+			if (_vdecoder) {
+				_vdecoder->send_packet(av_packet_clone(packet));
+			}
 		} else if (_demuxer->getAudioStream() && packet->stream_index == _demuxer->getAudioStream()->index) {
 			if (packet->pts < _seekTimestampMs) {
 				continue;
 			}
 			_audioFrameCount++;
-			_audio_q.emplace(av_packet_clone(packet));
-			_apacket_cv.notify_all();
+			if (_adecoder) {
+				_adecoder->send_packet(av_packet_clone(packet));
+			}
 		} else {
 			logi("read finished, sum of video: %d, audio: %d\n", _videoFrameCount, _audioFrameCount);
 			break;
@@ -313,133 +343,6 @@ void Client::demuxerThread() {
 		av_packet_unref(packet);
 	}
 	
-}
-
-void Client::adecoderThread() {
-	if (!_adecoder) {
-		return;
-	}
-
-	AVPacket* packet = nullptr;
-	int ret = 0;
-	while (_state == PlayState::Playing) {
-		if (_state != PlayState::Playing) {
-			continue;
-		}
-		{		
-			std::unique_lock<std::mutex> lock(_apacket_queue_mutex);
-			_apacket_cv.wait(lock, [&]() {
-				return _audio_q.size() > 0 || _state == PlayState::Stopped;
-			});
-
-			if (_state == PlayState::Stopped) {
-				break;
-			}
-
-			packet = _audio_q.front();
-			_audio_q.pop();
-			_read_cv.notify_all();
-		}
-		if (!packet) {
-			logi("adecoderThread: no packet\n");
-			continue;
-		}
-
-		//_writer->write(packet->buf->data, packet->buf->size);
-		ret = _adecoder->send_packet(packet);
-		if (ret != 0) {
-			loge("adecoderThread: send_packet failed, ret: %d", ret);
-			continue;
-		}
-
-		while (ret >= 0) {
-			ret = _adecoder->receive_frame(_aframe);
-			if (ret < 0) {
-				// loge("adecoderThread: receive_frame failed, ret: %d", ret);
-				break;
-			}
-
-			_aframe->pts = static_cast<int64_t>(_aframe->pts * 1000.f / _aframe->sample_rate);
-
-			auto pcm = std::make_shared<Pcm>();
-			pcm->data = _aframe->data[0];
-			pcm->size = _aframe->linesize[0];
-			pcm->channels = _aframe->ch_layout.nb_channels;
-			pcm->sample_rate = _aframe->sample_rate;
-			pcm->sample_count = _aframe->nb_samples;
-
-			if (_speechRecognizer) {
-				_speechRecognizer->recognize(pcm);
-			}
-			_arender->render(_aframe);
-
-			av_frame_unref(_aframe);
-		}
-
-		av_packet_free(&packet);
-	}
-}
-
-void Client::vdecoderThread() {
-	if (!_vdecoder) {
-		return;
-	}
-	
-	AVPacket* packet = nullptr;
-	int ret = -1;
-	while (true) {
-		if (_state == PlayState::Stopped) {
-			break;
-		}
-		if (_state != PlayState::Playing) {
-			continue;
-		}
-
-		{
-			std::unique_lock<std::mutex> lock(_vpacket_queue_mutex);
-			_vpacket_cv.wait(lock, [&]() {
-				return _video_q.size() > 0 || _state == PlayState::Stopped;
-			});
-			if (_state == PlayState::Stopped) {
-				break;
-			}
-
-			packet = _video_q.front();
-			_video_q.pop();
-			_read_cv.notify_all();
-		}
-
-		if (packet->pts != 0) {
-			packet->pts = _lastFrameTimestampMs + _renderDelay;
-		}
-
-		_lastFrameTimestampMs = packet->pts;
-		ret = _vdecoder->send_packet(packet);
-		if (ret != 0) {
-			loge("vdecoderThread: send_packet failed, ret: %s", ff_error(ret));
-		}
-
-		while (ret >= 0) {
-			ret = _vdecoder->receive_frame(_vframe);
-			if (ret < 0) {
-				//loge("vdecoderThread: receive_frame failed, ret: %s", ff_error(ret));
-				continue;
-			}
-
-			if (_vframe->pts < _seekTimestampMs) {
-				continue;
-			}
-
-			// _vframe->pts = packet->pts;
-			if (_vrender) {
-				_vrender->render(_vframe);
-			}
-
-			av_frame_unref(_vframe);
-		}
-
-		av_packet_free(&packet);
-	}
 }
 
 int Client::getDurationMs() {
@@ -455,4 +358,28 @@ int Client::getDurationMs() {
 int Client::render() {
 	_vrender->render(_vframe);
 	return 0;
+}
+
+void Client::onVideoCallBack(AVFrame* frame) {
+	if (_vrender) {
+		_vrender->render(frame);
+	}
+}
+
+void Client::onAudioCallBack(AVFrame* frame) {
+	if (_arender) {
+		frame->pts = static_cast<int64_t>(frame->pts * 1000.f / frame->sample_rate);
+
+		auto pcm = std::make_shared<Pcm>();
+		pcm->data = frame->data[0];
+		pcm->size = frame->linesize[0];
+		pcm->channels = frame->ch_layout.nb_channels;
+		pcm->sample_rate = frame->sample_rate;
+		pcm->sample_count = frame->nb_samples;
+
+		if (_speechRecognizer) {
+			// _speechRecognizer->recognize(pcm);
+		}
+		_arender->render(frame);
+	}
 }

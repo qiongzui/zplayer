@@ -10,13 +10,14 @@ void Vdev::setOutputSize(int w, int h) {
 }
 
 int Vdev::init() {
-    _frameQueue = std::make_shared<Frame_Queue>(5);
+    // _frameQueue = std::make_shared<Frame_Queue>(5);
+    _swsFrame = av_frame_alloc();
     return 0;
 }
 
 int Vdev::start() {
     _isRunning = true;
-    _thread = std::thread(&Vdev::renderThread, this);
+    // _thread = std::thread(&Vdev::renderThread, this);
     return 0;
 }
 
@@ -36,30 +37,40 @@ int Vdev::release() {
         _swsContext = nullptr;
     }
 
+    if (_swsFrame) {
+        av_frame_free(&_swsFrame);
+        _swsFrame = nullptr;
+    }
+
     _frameQueue->release();
 
     return 0;
 }
 
 int Vdev::asyncRender(AVFrame* frame) {
-    AVFrame* swsFrame = nullptr;
-    {
-        std::unique_lock<std::mutex> lock(_empty_mutex);
-        _empty_cv.wait(lock, [&]() {
-            return _frameQueue->get_empty_queue_size() > 0 || !_isRunning;
-        });
-        if (!_isRunning) {
-            return -1;
-        }
+    
+    // {
+    //     std::unique_lock<std::mutex> lock(_empty_mutex);
+    //     _empty_cv.wait(lock, [&]() {
+    //         return _frameQueue->get_empty_queue_size() > 0 || !_isRunning;
+    //     });
+    //     if (!_isRunning) {
+    //         return -1;
+    //     }
 
-        swsFrame = _frameQueue->empty_dequeue();
+    //     swsFrame = _frameQueue->empty_dequeue();
+    // }
+
+    if (frame && (frame->format == AV_PIX_FMT_GRAY8 || frame->format == AV_PIX_FMT_D3D12)) {
+        render(frame->data[0], frame->linesize[0] * _height, frame->pts);
+        return 0;
     }
 
-    if (!swsFrame) {
+    if (!_swsFrame) {
         return -1;
     }
 
-    swsFrame->pts = frame->pts;
+    _swsFrame->pts = frame->pts;
     int bufferSize = 0;
     if (frame->width != _width || frame->height != _height) {
         if (!_swsContext) {
@@ -69,37 +80,27 @@ int Vdev::asyncRender(AVFrame* frame) {
         }
 
         if (_swsContext) {
-            if (swsFrame && !swsFrame->data[0]) {
-                bufferSize = av_image_alloc(swsFrame->data, swsFrame->linesize, _width, _height, AV_PIX_FMT_RGBA, 1);
+            if (_swsFrame && !_swsFrame->data[0]) {
+                bufferSize = av_image_alloc(_swsFrame->data, _swsFrame->linesize, _width, _height, AV_PIX_FMT_RGBA, 1);
             }
-            if (swsFrame && swsFrame->data) {
-                sws_scale(_swsContext, frame->data, frame->linesize, 0, frame->height, swsFrame->data, swsFrame->linesize);
+            if (_swsFrame && _swsFrame->data) {
+                sws_scale(_swsContext, frame->data, frame->linesize, 0, frame->height, _swsFrame->data, _swsFrame->linesize);
             }
         }
     } else {
-        if (swsFrame && !swsFrame->data[0]) {
-            av_image_alloc(swsFrame->data, swsFrame->linesize, _width, _height, AV_PIX_FMT_RGBA, 1);
+        if (_swsFrame && !_swsFrame->data[0]) {
+            av_image_alloc(_swsFrame->data, _swsFrame->linesize, _width, _height, AV_PIX_FMT_RGBA, 1);
         }
-        if (swsFrame && swsFrame->data) {
-            memcpy_s(swsFrame->data[0], swsFrame->linesize[0] * _height, frame->data[0], frame->linesize[0] * _height);
+        if (_swsFrame && _swsFrame->data) {
+            memcpy_s(_swsFrame->data[0], _swsFrame->linesize[0] * _height, frame->data[0], frame->linesize[0] * _height);
         }
     }
 
     auto start = get_current_timestamp();
-    std::unique_lock<std::mutex> lock(_mutex);
-    _cv.wait(lock, [&]() {
-        return _frameQueue->get_full_queue_size() < 20 || !_isRunning;
-    });
-
-    if (!_isRunning) {
-        return 0;
-    }
-    _frameQueue->full_enqueue(swsFrame);
-    // _render_q.emplace(_renderFrame);
-    _cv.notify_all();
+    render(_swsFrame->data[0], _swsFrame->linesize[0] * _height, _swsFrame->pts);
 
     auto end = get_current_timestamp();
-    //logi("enqueue time cost: %lld, q_size: %d", end - start, _frameQueue->get_full_queue_size());
+    //av_frame_unref(_swsFrame);
     return 0;
 }
 
@@ -134,7 +135,7 @@ void Vdev::renderThread() {
 
             int64_t delta = _frameQueue->get_full_current_frame_timestamp() - curPlayTime - 2;
             if (delta > 0) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                //std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 continue;
             }
             // pFrame = _render_q.front();

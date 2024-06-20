@@ -134,6 +134,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -150,10 +151,10 @@
     <ClInclude Include="..\src\arender.h" />
     <ClInclude Include="..\src\audio_filter.h" />
     <ClInclude Include="..\src\av_sync.h" />
-    <ClInclude Include="..\src\Client.h" />
     <ClInclude Include="..\src\d3dx12.h" />
     <ClInclude Include="..\src\demuxer.h" />
     <ClInclude Include="..\src\dev_factory.h" />
+    <ClInclude Include="..\src\engine.h" />
     <ClInclude Include="..\src\ff_decoder.h" />
     <ClInclude Include="..\src\ff_video_filter.h" />
     <ClInclude Include="..\src\layout.h" />
@@ -179,8 +180,8 @@
     <ClCompile Include="..\src\adev_win.cpp" />
     <ClCompile Include="..\src\arender.cpp" />
     <ClCompile Include="..\src\av_sync.cpp" />
-    <ClCompile Include="..\src\Client.cpp" />
     <ClCompile Include="..\src\demuxer.cpp" />
+    <ClCompile Include="..\src\engine.cpp" />
     <ClCompile Include="..\src\ff_decoder.cpp" />
     <ClCompile Include="..\src\ff_video_filter.cpp" />
     <ClCompile Include="..\src\layout.cpp" />

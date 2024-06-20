@@ -34,6 +34,6 @@ namespace ZPlayer {
         std::unique_ptr<FF_VideoFilter> _videoFilter = nullptr;
         std::unique_ptr<FF_VideoFilter> _textFilter = nullptr;
 
-        bool _isUseXml = true;
+        bool _isUseXml = false;
     };
 }

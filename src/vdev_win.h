@@ -92,7 +92,7 @@ namespace ZPlayer {
             // ComPtr<ID3D12Resource> _vertexBuffer = nullptr;
             std::vector<ComPtr<ID3D12Resource>> _vertexBuffers;
             ComPtr<ID3D12Fence1> _fence = nullptr;
-            ComPtr<ID3D12Resource> _texcute = nullptr;
+            ComPtr<ID3D12Resource> _texture = nullptr;
             ComPtr<ID3D12Resource> _textureUpload = nullptr;
 
             // render params

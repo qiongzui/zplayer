@@ -44,5 +44,6 @@ namespace ZPlayer {
 
         SwsContext* _swsContext = nullptr;
         std::shared_ptr<AVSync> _avSync = nullptr;
+        AVFrame* _swsFrame = nullptr;
     };
 } // namespace ZPlayer

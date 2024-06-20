@@ -3,6 +3,10 @@
 #include "zlog.h"
 #include "ztools.h"
 
+extern "C" {
+    #include "libavutil/hwcontext_d3d12va.h"
+}
+
 #include <iostream>
 
 using namespace ZPlayer;
@@ -64,7 +68,7 @@ int Vdev_win::release() {
 int Vdev_win::render(uint8_t* data, int len, int64_t pts) {
     auto hr = populateCommandList(data, len);
     if (hr != S_OK) {
-        loge("populateCommandList failed, error: %s", win_error(GetLastError()));
+        loge("populateCommandList failed, error: %d", hr);
         return -1;
     }
 
@@ -73,7 +77,7 @@ int Vdev_win::render(uint8_t* data, int len, int64_t pts) {
 
     hr = _swapChain->Present(1, 0);
     if (hr != S_OK) {
-        loge("present failed, error: %s", win_error(GetLastError()));
+        loge("present failed, error: %d", hr);
         return -1;
     }
     waitForPreviousFrame(pts);
@@ -380,13 +384,13 @@ int Vdev_win::initResource() {
             &stTextureDesc,
             D3D12_RESOURCE_STATE_COPY_DEST,
             nullptr,
-            IID_PPV_ARGS(&_texcute));
+            IID_PPV_ARGS(&_texture));
         if (hr != S_OK) {
-            loge("createCommittedResource failed, error: %s", win_error(GetLastError()));
+            loge("create texture failed");
             return -1;
         }
 
-        UINT64 uploadBufferSize = GetRequiredIntermediateSize(_texcute.Get(), 0, 1);
+        UINT64 uploadBufferSize = GetRequiredIntermediateSize(_texture.Get(), 0, 1);
 
         heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
@@ -398,28 +402,28 @@ int Vdev_win::initResource() {
             nullptr,
             IID_PPV_ARGS(&_textureUpload));
         if (hr != S_OK) {
-            loge("createCommittedResource failed, error: %s", win_error(GetLastError()));
+            loge("create textureUpload failed, error: %s", win_error(hr));
             return -1;
         }
 
-        std::vector<UINT8> texture = generateTextureData();
+        // std::vector<UINT8> texture = generateTextureData();
 
-        D3D12_SUBRESOURCE_DATA textureData = {};
-        textureData.pData = &texture[0];
-        textureData.RowPitch = _width * 4;
-        textureData.SlicePitch = textureData.RowPitch * _height;
+        // D3D12_SUBRESOURCE_DATA textureData = {};
+        // textureData.pData = &texture[0];
+        // textureData.RowPitch = _width * 4;
+        // textureData.SlicePitch = textureData.RowPitch * _height;
         //         FILE* fp = nullptr;
         // fopen_s(&fp, R"(C:\Users\51917\Desktop\test\texture1.rgba)", "wb");
         // fwrite(textureData.pData, 1, textureData.SlicePitch, fp);
         // fclose(fp);
 
-        int size = UpdateSubresources(_commandList.Get(), _texcute.Get(), _textureUpload.Get(), 0, 0, 1, &textureData);
-        if (size == 0) {
-            loge("UpdateSubresources failed, error: %s", win_error(GetLastError()));
-            return -1;
-        }
+        // int size = UpdateSubresources(_commandList.Get(), _texture.Get(), _textureUpload.Get(), 0, 0, 1, &textureData);
+        // if (size == 0) {
+        //     loge("UpdateSubresources failed, error: %s", win_error(GetLastError()));
+        //     return -1;
+        // }
 
-		auto urceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(_texcute.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		auto urceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(_texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         _commandList->ResourceBarrier(1, &urceBarrier);
     
         D3D12_SHADER_RESOURCE_VIEW_DESC stSrvDesc = {};
@@ -428,7 +432,7 @@ int Vdev_win::initResource() {
         stSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
         stSrvDesc.Texture2D.MipLevels = 1;
         stSrvDesc.Texture2D.MostDetailedMip = 0;
-        _device->CreateShaderResourceView(_texcute.Get(), &stSrvDesc, _srvHeap->GetCPUDescriptorHandleForHeapStart());
+        _device->CreateShaderResourceView(_texture.Get(), &stSrvDesc, _srvHeap->GetCPUDescriptorHandleForHeapStart());
     }
 
     // close the command list and execute it to begin the initial GPU setup
@@ -535,7 +539,7 @@ int Vdev_win::populateCommandList(uint8_t* frame, int size)
     // fences to determine GPU execution progress.
     auto hr = _commandAllocator->Reset();
     if (FAILED(hr)) {
-        loge("reset command allocator failed, error: %s", win_error(GetLastError()));
+        loge("reset command allocator failed, error: %d", hr);
         return -1;
     }
 
@@ -544,7 +548,7 @@ int Vdev_win::populateCommandList(uint8_t* frame, int size)
     // re-recording.
     hr = _commandList->Reset(_commandAllocator.Get(), _pipelineState.Get());
     if (FAILED(hr)) {
-        loge("reset command list failed, error: %s", win_error(GetLastError()));
+        loge("reset command list failed, error: %d", hr);
         return -1;
     }
 
@@ -560,11 +564,15 @@ int Vdev_win::populateCommandList(uint8_t* frame, int size)
     
     _commandList->RSSetScissorRects(1, &_scissorRect);
     // copy data to texture
+
+    // auto tmpTexture = ((AVD3D12VAFrame*)frame)->texture;
+    // _commandList->CopyResource(_texture.Get(), tmpTexture);
+    
     D3D12_SUBRESOURCE_DATA textureData = {};
     textureData.pData = frame;
     textureData.RowPitch = _width * 4;
     textureData.SlicePitch = size;
-    int len = UpdateSubresources(_commandList.Get(), _texcute.Get(), _textureUpload.Get(), 0, 0, 1, &textureData);
+    int len = UpdateSubresources(_commandList.Get(), _texture.Get(), _textureUpload.Get(), 0, 0, 1, &textureData);
     if (len == 0) {
         loge("UpdateSubresources failed, error: %s", win_error(GetLastError()));
         return -1;
